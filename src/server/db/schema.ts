@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { index, pgTableCreator, primaryKey } from "drizzle-orm/pg-core";
+import { index, pgTable, pgTableCreator, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
 
 /**
@@ -31,23 +31,34 @@ export const posts = createTable(
   ],
 );
 
-export const users = createTable("user", (d) => ({
-  id: d
-    .varchar({ length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: d.varchar({ length: 255 }),
-  email: d.varchar({ length: 255 }).notNull(),
-  emailVerified: d
-    .timestamp({
-      mode: "date",
-      withTimezone: true,
-    })
-    .default(sql`CURRENT_TIMESTAMP`),
-  image: d.varchar({ length: 255 }),
-}));
+// export const users = createTable("user", (d) => ({
+//   id: d
+//     .varchar({ length: 255 })
+//     .notNull()
+//     .primaryKey()
+//     .$defaultFn(() => crypto.randomUUID()),
+//   name: d.varchar({ length: 255 }),
+//   email: d.varchar({ length: 255 }).notNull(),
+//   emailVerified: d
+//     .timestamp({
+//       mode: "date",
+//       withTimezone: true,
+//     })
+//     .default(sql`CURRENT_TIMESTAMP`),
+//   image: d.varchar({ length: 255 }),
+// }));
 
+export const users = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name"),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  password: text("password").notNull(),
+  phoneNumber: text("phone_number"),
+  emailVerified: text("emailVerified"),
+  image: text("image"),
+})
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
 }));
@@ -80,18 +91,24 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   user: one(users, { fields: [accounts.userId], references: [users.id] }),
 }));
 
-export const sessions = createTable(
-  "session",
-  (d) => ({
-    sessionToken: d.varchar({ length: 255 }).notNull().primaryKey(),
-    userId: d
-      .varchar({ length: 255 })
-      .notNull()
-      .references(() => users.id),
-    expires: d.timestamp({ mode: "date", withTimezone: true }).notNull(),
-  }),
-  (t) => [index("t_user_id_idx").on(t.userId)],
-);
+// export const sessions = createTable(
+//   "session",
+//   (d) => ({
+//     sessionToken: d.varchar({ length: 255 }).notNull().primaryKey(),
+//     userId: d
+//       .varchar({ length: 255 })
+//       .notNull()
+//       .references(() => users.id),
+//     expires: d.timestamp({ mode: "date", withTimezone: true }).notNull(),
+//   }),
+//   (t) => [index("t_user_id_idx").on(t.userId)],
+// );
+
+export const sessions = pgTable("session", {
+  sessionToken: text("session_token").primaryKey(),
+  userId: text("user_id").notNull(),
+  expires: timestamp("expires").notNull(),
+})
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, { fields: [sessions.userId], references: [users.id] }),

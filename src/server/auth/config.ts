@@ -1,15 +1,14 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import bcrypt from 'bcrypt';
+import { eq } from "drizzle-orm";
+import { pgTable } from "drizzle-orm/pg-core";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
-
+import type { Adapter } from "next-auth/adapters";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "~/server/db";
 import {
-  accounts,
-  sessions,
-  users,
-  verificationTokens,
+  users
 } from "~/server/db/schema";
-
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
  * object and keep type safety.
@@ -38,7 +37,54 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    DiscordProvider,
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials, req) {
+        try {
+          const cEmail = credentials?.email as string;
+          const cPassword = credentials?.password as string;
+
+          if (!cEmail || !cPassword) {
+            throw new Error("Please Enter Credentials");
+          }
+
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, cEmail),
+          });
+
+          if (!user) {
+            throw new Error("Invalid credentials");
+          }
+
+          const isCorrectPassword = await bcrypt.compare(
+            cPassword,
+            user?.password,
+          );
+
+          // if (user && isCorrectPassword) {
+          //   console.log("user", user);
+          //   return user;
+          // } else {
+          //   console.log("user", user);
+          //   console.log("isCorrectPassword", isCorrectPassword);
+
+          //   throw new Error("#4 invalid credentials");
+          // }
+
+          if(user){
+            return user
+          }else {
+              throw new Error("#4 invalid credentials");
+            }
+        } catch (err) {
+          throw new Error(err as string);
+        }
+      },
+    }),
     /**
      * ...add more providers here.
      *
@@ -49,12 +95,7 @@ export const authConfig = {
      * @see https://next-auth.js.org/providers/github
      */
   ],
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  adapter: DrizzleAdapter(db) as Adapter,
   callbacks: {
     session: ({ session, user }) => ({
       ...session,
@@ -63,5 +104,8 @@ export const authConfig = {
         id: user.id,
       },
     }),
+  },
+  pages: {
+    signIn: "/auth/signin",
   },
 } satisfies NextAuthConfig;
