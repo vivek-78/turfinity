@@ -9,8 +9,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { z } from "zod";
 
-// import { useToast } from "~/shared/shadcn/ui/use-toast";
-
+import { toast } from "sonner"
 import { useForm, type SubmitHandler } from "react-hook-form";
 import FormInput from "~/components/custom/FormInput";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
@@ -37,34 +36,33 @@ export default function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
-//   const { toast } = useToast();
   const [loading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
   const formMethods = useForm<FormData>({
     mode: "onBlur",
+    defaultValues: {
+      email: undefined,
+      password: undefined
+    },
     resolver: zodResolver(loginSchema)
   });
-  // const formMethods = useForm<FormData>();
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     setIsLoading(true);
     try {
       const signInResponse = await signIn("credentials", {
-        email: data.email,
+        username: data.email,
         password: data.password,
         redirect: false
       });
-
-      if (signInResponse?.ok) {
-        router.push(callbackUrl ?? "/");
+      if (!signInResponse?.error) {
+        router.push("/");
       } else {
-        // toast({
-        //   title: "Invalid credentials",
-        //   variant: "destructive",
-        //   description: "Please check your email and password and try again.",
-        //   duration: 3000
-        // });
+        toast.error("Invalid credentials", {
+          // description: "Please check your email and password and try again.",
+          duration: 3000
+        });
         console.log("Invalid credentials");
       }
       setIsLoading(false);
