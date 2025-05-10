@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 import { Toaster } from "~/components/ui/sonner";
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import { AppSidebar } from "~/components/custom/app-sidebar";
+import TopBar from "~/components/ui/topbar";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -24,11 +27,45 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <SessionProvider>
-      <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
-        <Toaster />
-      </body>
+        <body>
+          <TRPCReactProvider>
+            <TopBar />
+            <SidebarProvider>
+              <AppSidebar />
+              <main className="w-full">
+                <SidebarTrigger />
+                {children}
+              </main>
+            </SidebarProvider>
+          </TRPCReactProvider>
+          <Toaster />
+        </body>
       </SessionProvider>
     </html>
+    // <html lang="en" className={`${geist.variable}`}>
+    //   <SessionProvider>
+    //   <body>
+    //     <TRPCReactProvider>{children}</TRPCReactProvider>
+    //     <Toaster />
+    //   </body>
+    //   </SessionProvider>
+    // </html>
   );
 }
+
+{/* <html lang="en" className={`${geist.variable}`}>
+      <SessionProvider>
+        <body>
+          <TRPCReactProvider>
+            <SidebarProvider>
+              <AppSidebar />
+              <main>
+                <SidebarTrigger />
+                {children}
+              </main>
+            </SidebarProvider>
+          </TRPCReactProvider>
+          <Toaster />
+        </body>
+      </SessionProvider>
+    </html> */}

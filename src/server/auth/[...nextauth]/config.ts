@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 
 import { db } from "~/server/db";
 import {
+  sportsComplex,
   users,
 } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
@@ -22,6 +23,7 @@ declare module "next-auth" {
     firstName?: string | undefined;
     lastName?: string | undefined;
     email?: string | null;
+    sportsComplexId?: string| null;
   }
   interface Session extends DefaultSession {
     user: {
@@ -29,6 +31,7 @@ declare module "next-auth" {
       firstName?: string | undefined;
       lastName?: string | undefined;
       email?: string | null;
+      sportsComplexId?: string| null;
     } & DefaultSession["user"];
   }
 }
@@ -64,7 +67,9 @@ export const authConfig = {
             user?.password ?? ""
           );
           if (user && isValidPassword) {
-            console.log("success")
+            const sportsComplexDetails = await db.query.sportsComplex.findFirst({
+              where: eq(sportsComplex.owner, user.id)
+            })
             return {
               id: user.id,
               firstName: user.firstName,
@@ -72,10 +77,10 @@ export const authConfig = {
               email: user.email,
               emailVerified: user.emailVerified,
               image: user.image,
+              sportsComplexId: sportsComplexDetails?.id
             };
           } else {
-            console.log("fail")
-            throw new Error("#4 invalid credentials");
+            throw new Error("Invalid credentials");
           }
         } catch (err) {
           console.error(err);
@@ -97,12 +102,17 @@ export const authConfig = {
   },
   adapter: DrizzleAdapter(db),
   callbacks: {
-    jwt: ({ token, user }) => {
+    jwt: ({ token, user, trigger }) => {
       if (user) {
         token.id = user.id;
         token.firstName = user.firstName;
         token.lastName = user.lastName;
         token.email = user.email;
+        token.sportsComplexId = user?.sportsComplexId;
+      }
+      if (trigger === "update" && user?.sportsComplexId) {
+        // Note, that `session` can be any arbitrary object, remember to validate it!
+        token.sportsComplexId = user.sportsComplexId
       }
       return token;
     },
@@ -115,6 +125,7 @@ export const authConfig = {
           lastName: token.lastName as string,
           email: token.email!,
           image: session.user?.image, // Keep the image from the default session
+          sportsComplexId: token.sportsComplexId as string
         },
       };
     },

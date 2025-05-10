@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -69,10 +69,7 @@ export default function SignUpForm() {
     setLoading(true);
     try {
       await signUpMutation.mutateAsync(data, {
-        onSuccess: () => {
-        //   toast({
-        //     title: "Account created!"
-        //   });
+        onSuccess: (user) => {
           signIn("credentials", {
             email: data.email,
             password: data.password,
@@ -100,7 +97,6 @@ export default function SignUpForm() {
       setLoading(false);
     }
   };
-
 //   useEffect(() => {
 //     if (status === "authenticated") {
 //       void router.push("/");

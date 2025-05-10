@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { users } from "~/server/db/schema";
+import { sportsComplex, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { generateUniqueId } from "./utils";
@@ -29,7 +29,7 @@ export const authRouter = createTRPCRouter({
     
           const hashPassword = await bcrypt.hash(password, 10);
           const userId = generateUniqueId("USR");
-          await ctx.db.insert(users).values({
+           await ctx.db.insert(users).values({
             id: userId,
             firstName,
             lastName,
@@ -38,13 +38,9 @@ export const authRouter = createTRPCRouter({
             password: hashPassword,
             // image: DEFAULT_AVATAR
           });
-    
-          const returnData = {
-            name: `${firstName} ${lastName}`,
-            id: userId,
-            // role: DEFAULT_ROLE
-          };
-    
-          return returnData;
+          const signedUpUser = await ctx.db.query.users.findFirst({
+            where: eq(users.id, userId)
+          });
+          return signedUpUser;
         })
 })

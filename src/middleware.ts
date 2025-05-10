@@ -5,13 +5,13 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  // if (!token) {
-  //   return NextResponse.redirect(new URL("/api/auth/signin", request.url));
-  // }
+  if (!token) {
+    return NextResponse.redirect(new URL("/api/auth/signin", request.url));
+  }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dash2"], // secure these routes
+  matcher: ["/dashboard", "/add-sports-complex"], // secure these routes
 };
